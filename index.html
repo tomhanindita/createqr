@@ -8,74 +8,75 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #eef2f3 0%, #8e9eab 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
             padding: 1.5rem;
             margin: 0;
         }
 
-        .card-qr {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border: none;
-            border-radius: 2rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
-            max-width: 500px;
+        .card-container {
+            max-width: 450px;
             width: 100%;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            perspective: 1000px;
         }
 
-        .card-qr:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+        /* Desain Kartu Premium (Mirip Gambar Mockup) */
+        .card-qr {
+            background: linear-gradient(180deg, #4a0000 0%, #111111 40%, #111111 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2rem;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+            padding: 2.5rem 2rem;
+            width: 100%;
+            text-align: center;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #ffffff;
         }
 
-        .youtube-badge {
-            background: #ff0000;
-            color: white;
-            border-radius: 50px;
-            padding: 0.4rem 1.2rem;
-            font-weight: 600;
-            font-size: 0.85rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.2);
+        .main-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 2rem;
+            background: linear-gradient(45deg, #ffffff, #ffcccc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        /* QR Wrapper disembunyikan di awal */
+        /* Wrapper QR yang menyembunyikan QR sebelum digenerate */
+        .qr-result-section {
+            display: none;
+            /* Tersembunyi di awal */
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.5s ease;
+        }
+
+        .qr-result-section.show {
+            display: block;
+            opacity: 1;
+            transform: scale(1);
+        }
+
         .qr-wrapper {
             background: #ffffff;
-            padding: 2rem 1.5rem;
+            padding: 1.2rem;
             border-radius: 1.5rem;
-            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.03);
-            display: none;
-            /* Hidden by default */
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1.2rem;
-            opacity: 0;
-            transition: opacity 0.4s ease;
-        }
-
-        .qr-wrapper.show {
-            display: flex;
-            opacity: 1;
+            display: inline-block;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            margin-bottom: 1.5rem;
+            position: relative;
         }
 
         #qrcode {
-            background: white;
-            padding: 12px;
-            border: 1px solid #f0f0f0;
-            border-radius: 1.25rem;
             display: inline-block;
         }
 
@@ -84,207 +85,230 @@
             height: auto;
         }
 
+        /* Logo YouTube buatan di tengah QR */
+        .qr-center-logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: #ffffff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .qr-center-logo i {
+            color: #ff0000;
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+
         .link-out {
-            word-break: break-all;
-            font-size: 0.85rem;
-            background: #f8f9fa;
-            padding: 0.5rem 1.2rem;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            padding: 0.6rem 1.2rem;
             border-radius: 50px;
-            color: #495057;
-            border: 1px solid #e9ecef;
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             max-width: 100%;
-            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Input area */
+        .input-section {
+            transition: all 0.3s ease;
         }
 
         .input-group-custom {
-            background: white;
+            background: rgba(255, 255, 255, 0.08);
             border-radius: 50px;
-            padding: 0.35rem 0.35rem 0.35rem 1.2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-            border: 1px solid #dee2e6;
+            padding: 0.4rem 0.4rem 0.4rem 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             transition: all 0.3s ease;
         }
 
         .input-group-custom:focus-within {
-            border-color: #ff0000;
-            box-shadow: 0 0 0 4px rgba(255, 0, 0, 0.15);
+            border-color: #ff3333;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 4px rgba(255, 51, 51, 0.25);
         }
 
         .input-group-custom input {
             border: none;
             background: transparent;
-            padding: 0.5rem 0;
+            padding: 0.6rem 0;
             font-size: 0.95rem;
             outline: none;
             width: 100%;
+            color: white;
         }
 
+        .input-group-custom input::placeholder {
+            color: #aaaaaa;
+        }
+
+        /* Buttons */
         .btn-custom {
             border-radius: 50px;
-            padding: 0.6rem 1.2rem;
+            padding: 0.6rem 1.5rem;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
-            gap: 0.4rem;
-        }
-
-        .btn-custom:active {
-            transform: scale(0.96);
-        }
-
-        .btn-primary-custom {
-            background: #111;
-            color: white;
+            gap: 0.5rem;
             border: none;
         }
 
-        .btn-primary-custom:hover {
-            background: #ff0000;
-            color: white;
-            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.25);
+        .btn-generate {
+            background: #ffffff;
+            color: #111111;
         }
 
-        .btn-action {
-            padding: 0.5rem 1rem;
+        .btn-generate:hover {
+            background: #ff3333;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 51, 51, 0.4);
+        }
+
+        .btn-download {
+            background: #ff0000;
+            color: white;
+            width: 100%;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+        }
+
+        .btn-download:hover {
+            background: #cc0000;
+            color: white;
+        }
+
+        .btn-reset {
+            background: transparent;
+            color: #aaaaaa;
             font-size: 0.85rem;
+            text-decoration: none;
+            margin-top: 1rem;
+            display: inline-block;
+            transition: color 0.2s;
+        }
+
+        .btn-reset:hover {
+            color: #ffffff;
         }
 
         .footer-note {
             font-size: 0.75rem;
-            color: #6c757d;
-            text-align: center;
+            color: #666666;
+            margin-top: 1.5rem;
+            letter-spacing: 0.5px;
         }
 
         #downloadCanvas {
             display: none;
         }
 
-        /* Alert Styling */
-        .alert-success-custom {
-            background-color: #d1e7dd;
-            border-color: #badbcc;
-            color: #0f5132;
-            border-radius: 50px;
-            padding: 0.5rem 1.2rem;
-            font-size: 0.9rem;
-            display: none;
-        }
-
-        @media (max-width: 576px) {
-            .card-qr {
-                padding: 1.5rem;
-            }
-
+        @media (max-width: 480px) {
             .input-group-custom {
                 flex-direction: column;
-                border-radius: 1.25rem;
+                border-radius: 1.5rem;
                 padding: 1rem;
                 gap: 0.75rem;
             }
 
             .input-group-custom input {
-                padding: 0.25rem;
+                text-align: center;
             }
 
-            .input-group-custom .btn-custom {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .action-buttons {
-                width: 100%;
-                flex-direction: column;
-            }
-
-            .action-buttons button {
+            .btn-generate {
                 width: 100%;
                 justify-content: center;
             }
         }
-
     </style>
 </head>
 
 <body>
-    <div class="card-qr">
-        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
-            <div class="youtube-badge">
-                <i class="bi bi-youtube"></i>
-                <span>YouTube to QR</span>
-            </div>
-            <span class="text-muted small">
-                <i class="bi bi-qr-code-scan me-1"></i> Scan Camera
-            </span>
-        </div>
+    <div class="card-container">
+        <div class="card-qr">
+            <div class="main-title" id="cardTitle">YouTube to QR</div>
 
-        <div class="alert alert-success-custom align-items-center gap-2 mb-3 shadow-sm" id="successAlert" role="alert">
-            <i class="bi bi-check-circle-fill"></i>
-            <div>Berhasil generate QR Code!</div>
-        </div>
-
-        <div class="input-group-custom d-flex align-items-center mb-3">
-            <i class="bi bi-link-45deg text-muted me-2 fs-5"></i>
-            <input type="url" id="youtubeInput" placeholder="Masukkan URL YouTube di sini..." autocomplete="off"
-                spellcheck="false">
-            <button class="btn btn-custom btn-primary-custom" id="generateBtn">
-                Buat QR
-            </button>
-        </div>
-
-        <div class="qr-wrapper mb-4" id="qrWrapper">
-            <div id="qrcode"></div>
-
-            <div class="link-out text-truncate w-100">
-                <i class="bi bi-link-45deg me-1"></i>
-                <span id="linkText"></span>
+            <div class="input-section" id="inputSection">
+                <div class="input-group-custom d-flex align-items-center mb-2">
+                    <input type="url" id="youtubeInput" placeholder="Paste YouTube URL disini..." autocomplete="off"
+                        spellcheck="false">
+                    <button class="btn-custom btn-generate" id="generateBtn">
+                        Generate
+                    </button>
+                </div>
             </div>
 
-            <div class="d-flex flex-wrap gap-2 w-100 justify-content-center action-buttons">
-                <button class="btn btn-custom btn-action btn-primary shadow-sm" id="downloadBtn">
-                    <i class="bi bi-download"></i> Simpan PNG
+            <div class="qr-result-section" id="qrResultSection">
+                <div class="qr-wrapper">
+                    <div id="qrcode"></div>
+                    <div class="qr-center-logo">
+                        <i class="bi bi-youtube"></i>
+                    </div>
+                </div>
+
+                <br>
+                <div class="link-out">
+                    <i class="bi bi-qr-code"></i>
+                    <span id="linkText">youtu.be/your-link</span>
+                </div>
+
+                <button class="btn-custom btn-download mb-2" id="downloadBtn">
+                    <i class="bi bi-download"></i> Download PNG
                 </button>
-                <button class="btn btn-custom btn-action btn-outline-danger" id="resetBtn">
-                    <i class="bi bi-trash"></i> Hapus
-                </button>
-            </div>
-        </div>
 
-        <div class="footer-note mt-3">
-            <p class="m-0 mb-1"><i class="bi bi-info-circle me-1"></i> Hasil unduhan otomatis menggunakan bingkai
-                premium.</p>
-            <span class="opacity-50">TDSquad © 2026</span>
+                <br>
+                <a href="#" class="btn-reset" id="resetBtn">
+                    <i class="bi bi-arrow-left"></i> Buat Link Baru
+                </a>
+            </div>
+
+            <div class="footer-note" id="footerCredit">
+                created with ❤️ by tdsquad
+            </div>
         </div>
     </div>
 
-    <canvas id="downloadCanvas" width="600" height="600"></canvas>
+    <canvas id="downloadCanvas" width="600" height="900"></canvas>
 
     <script>
         (function () {
             // DOM Elements
-            const qrWrapper = document.getElementById('qrWrapper');
+            const inputSection = document.getElementById('inputSection');
+            const qrResultSection = document.getElementById('qrResultSection');
+            const cardTitle = document.getElementById('cardTitle');
+            const footerCredit = document.getElementById('footerCredit');
+
             const qrContainer = document.getElementById('qrcode');
             const linkTextSpan = document.getElementById('linkText');
             const youtubeInput = document.getElementById('youtubeInput');
+
             const generateBtn = document.getElementById('generateBtn');
-            const resetBtn = document.getElementById('resetBtn');
             const downloadBtn = document.getElementById('downloadBtn');
-            const successAlert = document.getElementById('successAlert');
+            const resetBtn = document.getElementById('resetBtn');
             const downloadCanvas = document.getElementById('downloadCanvas');
             const ctx = downloadCanvas.getContext('2d');
 
-            let currentQRText = '';
-
-            // Clean & parse YouTube Link
+            // Fungsi parser link pendek youtube otomatis
             function cleanYouTubeLink(raw) {
                 if (!raw) return '';
                 let trimmed = raw.trim();
-
                 if (/^[A-Za-z0-9_-]{11}$/.test(trimmed)) {
                     return `https://youtu.be/${trimmed}`;
                 }
-
                 let videoId = null;
                 let match = trimmed.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
                 if (match) videoId = match[1];
@@ -292,143 +316,189 @@
                     match = trimmed.match(/[?&]v=([A-Za-z0-9_-]{11})/);
                     if (match) videoId = match[1];
                 }
-
                 if (videoId) return `https://youtu.be/${videoId}`;
                 if (/^https?:\/\//i.test(trimmed)) return trimmed;
                 if (trimmed.includes('.') && !trimmed.includes(' ')) return `https://${trimmed}`;
-
                 return trimmed;
             }
 
-            // Generate QR Code Function
+            // Fungsi membuat komponen QR Code menggunakan QR warna merah (#ff0000)
             function generateQR(text) {
-                currentQRText = text;
                 qrContainer.innerHTML = '';
+                new QRCode(qrContainer, {
+                    text: text,
+                    width: 240,
+                    height: 240,
+                    colorDark: '#ff0000', // QR warna merah sesuai tema gambar
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel
+                        .H // Level H agar QR tetap terbaca meski tengahnya ditimpa logo
+                });
 
-                try {
-                    new QRCode(qrContainer, {
-                        text: text,
-                        width: 200,
-                        height: 200,
-                        colorDark: '#111111',
-                        colorLight: '#ffffff',
-                        correctLevel: QRCode.CorrectLevel.H
+                let displayText = text.replace(/^https?:\/\/(www\.)?/, '');
+                if (displayText.length > 30) displayText = displayText.substring(0, 27) + '…';
+                linkTextSpan.textContent = displayText;
+            }
+
+            // Aksi saat Tombol Generate diklik
+            generateBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const rawUrl = youtubeInput.value.trim();
+
+                if (!rawUrl) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Oops...',
+                        text: 'Silakan masukkan URL atau teks terlebih dahulu!',
+                        confirmButtonColor: '#ff0000'
                     });
-                } catch (e) {
-                    qrContainer.innerHTML = '<div class="text-danger small">Gagal memuat QR Code</div>';
-                    linkTextSpan.textContent = 'error';
                     return;
                 }
 
-                let displayText = text;
-                if (displayText.length > 40) displayText = displayText.substring(0, 37) + '…';
-                linkTextSpan.textContent = displayText;
+                const cleanedUrl = cleanYouTubeLink(rawUrl);
+                generateQR(cleanedUrl);
 
-                // Tampilkan Wrapper QR Code dengan transisi animasi
-                qrWrapper.classList.add('show');
-                qrWrapper.style.display = 'flex';
+                // SweetAlert2 Berhasil
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'QR Code premium kamu siap diunduh.',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
 
-                // Tampilkan Notifikasi Sukses Sementara (3 Detik)
-                successAlert.style.display = 'flex';
+                // Transisi Tampilan: Sembunyikan input, Munculkan QR Card
+                inputSection.style.display = 'none';
+                cardTitle.style.display = 'none';
+                footerCredit.style.display = 'none';
+
+                qrResultSection.classList.add('show');
+            });
+
+            // Tombol Kembali / Reset
+            resetBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                youtubeInput.value = '';
+
+                qrResultSection.classList.remove('show');
                 setTimeout(() => {
-                    successAlert.style.display = 'none';
-                }, 3000);
-            }
+                    inputSection.style.display = 'block';
+                    cardTitle.style.display = 'block';
+                    footerCredit.style.display = 'block';
+                }, 400);
+            });
 
-            // Canvas Drawing for Framed QR Download
-            function downloadFramedQR() {
+            // Proses Menggambar Bingkai Mockup Premium ke Canvas untuk Diunduh
+            function downloadMockupPNG() {
                 const qrCanvas = qrContainer.querySelector('canvas');
                 if (!qrCanvas) return;
 
-                const qrSize = 240;
-                const frameWidth = 600;
-                const frameHeight = 600;
-                const qrX = (frameWidth - qrSize) / 2;
-                const qrY = 140;
+                // Ukuran canvas disesuaikan dengan aspek rasio vertikal gambar kirimanmu
+                const w = 600;
+                const h = 1050;
+                downloadCanvas.width = w;
+                downloadCanvas.height = h;
 
-                downloadCanvas.width = frameWidth;
-                downloadCanvas.height = frameHeight;
+                // 1. Background Gradient Mewah (Merah Gelap Ke Hitam)
+                const grad = ctx.createLinearGradient(0, 0, 0, h);
+                grad.addColorStop(0, '#5a0505');
+                grad.addColorStop(0.3, '#111111');
+                grad.addColorStop(1, '#0a0a0a');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
 
-                const gradient = ctx.createLinearGradient(0, 0, frameWidth, frameHeight);
-                gradient.addColorStop(0, '#111111');
-                gradient.addColorStop(1, '#1e1e24');
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, frameWidth, frameHeight);
+                // 2. Efek Blurring halusnya luar kartu
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(10, 10, w - 20, h - 20);
 
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-                ctx.lineWidth = 4;
-                ctx.strokeRect(20, 20, frameWidth - 40, frameHeight - 40);
-
+                // 3. Teks Atas: "YouTube to QR"
                 ctx.textAlign = 'center';
-                ctx.fillStyle = '#ff0000';
-                ctx.font = 'bold 28px "Segoe UI", Roboto, sans-serif';
-                ctx.fillText('▶ YOUTUBE', frameWidth / 2, 65);
-
+                ctx.textBaseline = 'middle';
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '600 16px "Segoe UI", Roboto, sans-serif';
-                ctx.fillText('PINDAI KODE UNTUK MENONTON', frameWidth / 2, 100);
+                ctx.font = 'bold 42px "Segoe UI", Roboto, sans-serif';
+                ctx.fillText('Pindai QR Code', w / 2, 130);
+
+                // 4. Wadah Putih QR Code Melengkung (Rounded Rectangle)
+                const qrSize = 340;
+                const qrX = (w - qrSize) / 2;
+                const qrY = 260;
+                const r = 40; // kelengkungan border wadah putih
 
                 ctx.save();
                 ctx.fillStyle = '#ffffff';
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-                ctx.shadowBlur = 30;
-
-                const pad = 20;
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 40;
                 ctx.beginPath();
-                ctx.roundRect(qrX - pad, qrY - pad, qrSize + (pad * 2), qrSize + (pad * 2), 24);
+                ctx.roundRect(qrX - 25, qrY - 25, qrSize + 50, qrSize + 50, r);
                 ctx.fill();
                 ctx.restore();
 
+                // 5. Gambar QR Code Merah ke dalam wadah putih
                 ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
 
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-                ctx.font = '600 16px "Segoe UI", Roboto, sans-serif';
-                ctx.fillText('created with ❤️ by TdsquaD', frameWidth / 2, frameHeight - 55);
+                // 6. Gambar Logo YouTube pas di tengah QR Code pada hasil download
+                const logoSize = 64;
+                const logoX = (w - logoSize) / 2;
+                const logoY = qrY + (qrSize - logoSize) / 2;
 
+                // background putih mini logo
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.roundRect(logoX - 6, logoY - 6, logoSize + 12, logoSize + 12, 14);
+                ctx.fill();
+
+                // icon merah play youtube di canvas
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.roundRect(logoX, logoY, logoSize, logoSize, 12);
+                ctx.fill();
+
+                // Segitiga Putih Play Button
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.moveTo(logoX + 26, logoY + 18);
+                ctx.lineTo(logoX + 44, logoY + 32);
+                ctx.lineTo(logoX + 26, logoY + 46);
+                ctx.closePath();
+                ctx.fill();
+
+                // 7. Teks Link di bawah QR
+                const linkY = 760;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.beginPath();
+                ctx.roundRect((w - 340) / 2, linkY - 25, 340, 50, 25);
+                ctx.fill();
+
+                ctx.fillStyle = '#e0e0e0';
+                ctx.font = '300 22px "Segoe UI", Roboto, sans-serif';
+                ctx.fillText('🔗 ' + linkTextSpan.textContent, w / 2, linkY);
+
+                // 8. Footer Copyright
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-                ctx.font = '12px "Segoe UI", Roboto, sans-serif';
-                ctx.fillText('© 2026 All Rights Reserved', frameWidth / 2, frameHeight - 30);
+                ctx.font = '16px "Segoe UI", Roboto, sans-serif';
+                ctx.fillText('created with ❤️ by tdsquad © 2026', w / 2, 950);
 
-                const link = document.createElement('a');
-                link.download = `youtube-qr-${Date.now()}.png`;
-                link.href = downloadCanvas.toDataURL('image/png');
-                link.click();
+                // Proses Simpan Gambar secara Otomatis
+                const a = document.createElement('a');
+                a.download = `YouTube_QR_Premium-${Date.now()}.png`;
+                a.href = downloadCanvas.toDataURL('image/png');
+                a.click();
             }
 
-            // Event Listeners
-            generateBtn.addEventListener('click', (e) => {
+            downloadBtn.addEventListener('click', function (e) {
                 e.preventDefault();
-                const inputValue = youtubeInput.value.trim();
-                if (!inputValue) {
-                    alert('Harap masukkan URL terlebih dahulu!');
-                    return;
-                }
-                const cleaned = cleanYouTubeLink(inputValue);
-                youtubeInput.value = cleaned;
-                generateQR(cleaned);
+                downloadMockupPNG();
             });
 
-            resetBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                youtubeInput.value = '';
-                qrWrapper.classList.remove('show');
-                qrWrapper.style.display = 'none';
-                successAlert.style.display = 'none';
-            });
-
-            downloadBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                downloadFramedQR();
-            });
-
-            youtubeInput.addEventListener('keypress', (e) => {
+            // Jalankan submit saat klik enter di kolom input
+            youtubeInput.addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     generateBtn.click();
                 }
             });
         })();
-
     </script>
 </body>
 
