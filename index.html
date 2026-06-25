@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Smart Link QR</title>
+    <title>Smart Link QR — Elegant Edition</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -351,6 +351,7 @@
                 width: 100%;
             }
         }
+
     </style>
 </head>
 
@@ -453,6 +454,7 @@
 
             let activeBrand = BRANDS.default;
             let ytMeta = null; // { title, author } populated only for YouTube links
+            let lastGeneratedUrl = ''; // raw URL used to regenerate a high-res QR on export
 
             // DOM Elements Mapping
             const mainCard = document.getElementById('mainCard');
@@ -514,6 +516,7 @@
             // Real-time Dynamic QR Generator
             function generateDynamicQR(text, brandConfig, meta) {
                 qrContainer.innerHTML = '';
+                lastGeneratedUrl = text;
 
                 new QRCode(qrContainer, {
                     text: text,
@@ -598,6 +601,7 @@
                 urlInput.value = '';
                 urlInput.style.height = 'auto';
                 ytMeta = null;
+                lastGeneratedUrl = '';
 
                 qrResultSection.classList.remove('show');
                 setTimeout(() => {
@@ -612,31 +616,80 @@
 
             // High-Resolution Export Engine Image Composer
             function downloadDinamisPNG() {
-                const qrCanvas = qrContainer.querySelector('canvas');
-                if (!qrCanvas) return;
+                if (!lastGeneratedUrl) return;
 
-                const w = 600;
-                const h = 980;
-                downloadCanvas.width = w;
-                downloadCanvas.height = h;
+                // Render a fresh, high-resolution QR code specifically for
+                // export. Reusing the on-screen QR (sized for ~220px display)
+                // would look blurry once scaled up for a crisp, printable PNG.
+                const qrExportHolder = document.createElement('div');
+                qrExportHolder.style.position = 'absolute';
+                qrExportHolder.style.left = '-9999px';
+                document.body.appendChild(qrExportHolder);
 
-                // Clean paper backdrop
+                new QRCode(qrExportHolder, {
+                    text: lastGeneratedUrl,
+                    width: 960,
+                    height: 960,
+                    colorDark: '#1C1A17',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+
+                const qrCanvas = qrExportHolder.querySelector('canvas');
+                if (!qrCanvas) {
+                    document.body.removeChild(qrExportHolder);
+                    return;
+                }
+
+                // Logical layout: compact, near-square canvas (easy to drop
+                // into a Word document without dominating the page), with no
+                // link-text block. SCALE renders everything at 3x pixel
+                // density so the PNG stays crisp when zoomed, printed, or
+                // resized.
+                const w = 480;
+                const h = 680;
+                const SCALE = 3;
+                downloadCanvas.width = w * SCALE;
+                downloadCanvas.height = h * SCALE;
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.scale(SCALE, SCALE);
+
+                // Outer card border: a solid, clearly visible boundary so the
+                // graphic still reads as a distinct card when pasted onto a
+                // plain white page (Word/PowerPoint), instead of blending in.
+                const cardMargin = 12;
+                const cardRadius = 28;
+
+                ctx.save();
                 ctx.fillStyle = '#FBFAF8';
-                ctx.fillRect(0, 0, w, h);
+                ctx.beginPath();
+                ctx.roundRect(cardMargin, cardMargin, w - cardMargin * 2, h - cardMargin * 2, cardRadius);
+                ctx.fill();
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#D8D2C6';
+                ctx.stroke();
+                ctx.restore();
+
+                // Anything drawn outside the rounded card area should not
+                // show, so clip to it before painting the rest of the scene.
+                ctx.save();
+                ctx.beginPath();
+                ctx.roundRect(cardMargin, cardMargin, w - cardMargin * 2, h - cardMargin * 2, cardRadius);
+                ctx.clip();
 
                 // Soft brand glow top
-                const gradientEfek = ctx.createRadialGradient(w / 2, 80, 10, w / 2, 80, 420);
+                const gradientEfek = ctx.createRadialGradient(w / 2, 70, 10, w / 2, 70, 340);
                 gradientEfek.addColorStop(0, activeBrand.primaryColor + "22");
                 gradientEfek.addColorStop(1, "transparent");
                 ctx.fillStyle = gradientEfek;
-                ctx.fillRect(0, 0, w, h);
+                ctx.fillRect(cardMargin, cardMargin, w - cardMargin * 2, h - cardMargin * 2);
 
                 // Eyebrow label
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillStyle = '#6B6560';
-                ctx.font = '600 16px "JetBrains Mono", monospace';
-                ctx.fillText(ytMeta && ytMeta.title ? 'YOUTUBE' : 'QR STUDIO', w / 2, 78);
+                ctx.font = '600 14px "JetBrains Mono", monospace';
+                ctx.fillText(ytMeta && ytMeta.title ? 'YOUTUBE' : 'QR STUDIO', w / 2, 64);
 
                 // Title block: video title + channel name for YouTube,
                 // generic "Pindai QR Code" instruction for everything else.
@@ -675,44 +728,51 @@
                 let titleBottomY;
 
                 if (ytMeta && ytMeta.title) {
-                    const titleFont = '600 34px Georgia, "Times New Roman", serif';
-                    const lines = wrapCanvasText(ytMeta.title, titleFont, 480, 2);
+                    const titleFont = '600 28px Georgia, "Times New Roman", serif';
+                    const lines = wrapCanvasText(ytMeta.title, titleFont, 400, 2);
 
                     ctx.fillStyle = '#1C1A17';
                     ctx.font = titleFont;
-                    const startY = lines.length > 1 ? 128 : 140;
+                    const startY = lines.length > 1 ? 110 : 122;
                     lines.forEach((line, i) => {
-                        ctx.fillText(line, w / 2, startY + i * 42);
+                        ctx.fillText(line, w / 2, startY + i * 36);
                     });
-                    titleBottomY = startY + (lines.length - 1) * 42;
+                    titleBottomY = startY + (lines.length - 1) * 36;
 
                     if (ytMeta.author) {
                         ctx.fillStyle = '#6B6560';
-                        ctx.font = '500 19px Inter, sans-serif';
-                        ctx.fillText(ytMeta.author, w / 2, titleBottomY + 38);
-                        titleBottomY += 38;
+                        ctx.font = '500 16px Inter, sans-serif';
+                        ctx.fillText(ytMeta.author, w / 2, titleBottomY + 32);
+                        titleBottomY += 32;
                     }
                 } else {
                     ctx.fillStyle = '#1C1A17';
-                    ctx.font = '500 42px Georgia, "Times New Roman", serif';
-                    ctx.fillText('Pindai QR Code', w / 2, 150);
-                    titleBottomY = 150;
+                    ctx.font = '500 34px Georgia, "Times New Roman", serif';
+                    ctx.fillText('Pindai QR Code', w / 2, 124);
+                    titleBottomY = 124;
                 }
 
-                // Rounded White QR Holder Plate
-                const qrSize = 320;
-                const qrX = (w - qrSize) / 2;
-                const qrY = titleBottomY + 85;
+                // QR Holder Plate — fixed at 363x376 as requested. The QR
+                // code itself is drawn as a centered square (using the
+                // smaller dimension) so it never distorts, with a touch of
+                // extra bottom padding inside the plate.
+                const plateW = 363;
+                const plateH = 376;
+                const plateX = (w - plateW) / 2;
+                const plateY = titleBottomY + 60;
+                const qrSize = plateW - 56;
+                const qrX = plateX + (plateW - qrSize) / 2;
+                const qrY = plateY + (plateH - qrSize) / 2 - 6;
 
                 ctx.save();
                 ctx.fillStyle = '#ffffff';
                 ctx.strokeStyle = '#E5E0D8';
                 ctx.lineWidth = 1;
                 ctx.shadowColor = 'rgba(28, 26, 23, 0.08)';
-                ctx.shadowBlur = 40;
-                ctx.shadowOffsetY = 16;
+                ctx.shadowBlur = 36;
+                ctx.shadowOffsetY = 14;
                 ctx.beginPath();
-                ctx.roundRect(qrX - 28, qrY - 28, qrSize + 56, qrSize + 56, 28);
+                ctx.roundRect(plateX, plateY, plateW, plateH, 28);
                 ctx.fill();
                 ctx.stroke();
                 ctx.restore();
@@ -721,9 +781,9 @@
                 ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
 
                 // Corner brand badge (kept outside QR matrix to preserve scannability)
-                const badgeR = 26;
-                const badgeX = qrX + qrSize + 10;
-                const badgeY = qrY + qrSize + 10;
+                const badgeR = 22;
+                const badgeX = plateX + plateW - 14;
+                const badgeY = plateY + plateH - 14;
 
                 ctx.save();
                 ctx.fillStyle = '#ffffff';
@@ -819,34 +879,24 @@
 
                 ctx.restore();
 
-                // Link Field Capsule Layout
-                const linkY = qrY + qrSize + 150;
-                ctx.fillStyle = '#ffffff';
-                ctx.strokeStyle = '#E5E0D8';
-                ctx.lineWidth = 1;
-                ctx.save();
-                ctx.shadowColor = 'rgba(28, 26, 23, 0.04)';
-                ctx.shadowBlur = 16;
-                ctx.beginPath();
-                ctx.roundRect((w - 440) / 2, linkY - 26, 440, 52, 16);
-                ctx.fill();
-                ctx.stroke();
-                ctx.restore();
-
-                ctx.fillStyle = '#6B6560';
-                ctx.font = '500 18px "JetBrains Mono", monospace';
-                ctx.fillText(linkTextSpan.textContent, w / 2, linkY);
-
                 // Dynamic Footer Branding Sync Inside Downloaded Canvas File
+                const footerY = plateY + plateH + 46;
                 ctx.fillStyle = '#6B6560';
-                ctx.font = '500 16px Inter, sans-serif';
-                ctx.fillText('Dibuat dengan 💖 oleh tdsquad · 2026', w / 2, 900);
+                ctx.font = '500 14px Inter, sans-serif';
+                ctx.fillText('Dibuat dengan 💖 oleh tdsquad · 2026', w / 2, footerY);
+
+                ctx.restore(); // closes the clip region opened above
+
+                // Reset the scale transform so subsequent downloads start clean
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
 
                 // Immediate Auto Trigger Download Stream Action
                 const downloadLink = document.createElement('a');
                 downloadLink.download = `QR_${activeBrand.name.replace(/\s+/g, '_')}-${Date.now()}.png`;
                 downloadLink.href = downloadCanvas.toDataURL('image/png');
                 downloadLink.click();
+
+                document.body.removeChild(qrExportHolder);
             }
 
             downloadBtn.addEventListener('click', function (e) {
@@ -861,6 +911,7 @@
                 }
             });
         })();
+
     </script>
 </body>
 
